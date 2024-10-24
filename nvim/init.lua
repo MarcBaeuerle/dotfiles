@@ -1,11 +1,12 @@
 vim.g.mapleader = ' '
 vim.g.maplocalleader = ' '
 
-vim.keymap.set('n', '<leader>pv', vim.cmd.Ex)
+vim.keymap.set('n', '<leader>pf', vim.cmd.Ex)
 
 -- move highlighted text in Visual mode
 vim.keymap.set('v', 'J', ":m '>+1<CR>gv=gv")
 vim.keymap.set('v', 'K', ":m '<-2<CR>gv=gv")
+vim.keymap.set('n', 'q:', '<Nop>')
 
 -- keep cursor in place when folding lines with J
 vim.keymap.set('n', 'J', 'mzJ`z')
@@ -21,6 +22,8 @@ vim.keymap.set('n', '<Left>', '<C-w><') -- Decrease window width
 vim.keymap.set('n', '<Right>', '<C-w>>') -- Increase window width
 vim.keymap.set('n', '<Up>', '<C-w>+') -- Increase window height
 vim.keymap.set('n', '<Down>', '<C-w>-') -- Decrease window height
+
+vim.keymap.set('n', '<BS>', 'ciw')
 
 -- find and replace
 -- vim.keymap.set("n", "<leader>/", [[:%s/\<<C-r><C-w>\>/<C-r><C-w>/gI<Left><Left><Left>]])
@@ -79,7 +82,8 @@ vim.opt.inccommand = 'split'
 
 -- Show which line your cursor is on
 -- Enable the cursor line highlight
-vim.opt.cursorline = false
+vim.opt.cursorline = true
+vim.opt.cursorlineopt = "number"
 
 -- Minimal number of screen lines to keep above and below the cursor.
 vim.opt.scrolloff = 8
@@ -102,7 +106,7 @@ vim.keymap.set('n', '<leader>x', vim.diagnostic.open_float, { desc = 'Show diagn
 --
 -- NOTE: This won't work in all terminal emulators/tmux/etc. Try your own mapping
 -- or just use <C-\><C-n> to exit terminal mode
-vim.keymap.set('t', '<Esc><Esc>', '<C-\\><C-n>', { desc = 'Exit terminal mode' })
+-- vim.keymap.set('t', '<Esc><Esc>', '<C-\\><C-n>', { desc = 'Exit terminal mode' })
 
 -- Keybinds to make split navigation easier.
 --  Use CTRL+<hjkl> to switch between windows
@@ -255,14 +259,8 @@ require('lazy').setup({
           prompt_title = 'Live Grep in Open Files',
         }
       end, { desc = '[S]earch [/] in Open Files' })
-
-      -- Shortcut for searching your Neovim configuration files
-      vim.keymap.set('n', '<leader>nc', function()
-        builtin.find_files { cwd = vim.fn.stdpath 'config' }
-      end, { desc = '[S]earch [N]eovim files' })
     end,
   },
-
   { -- LSP Configuration & Plugins
     'neovim/nvim-lspconfig',
     dependencies = {
@@ -364,7 +362,7 @@ require('lazy').setup({
       capabilities = vim.tbl_deep_extend('force', capabilities, require('cmp_nvim_lsp').default_capabilities())
 
       local servers = {
-        -- clangd = {},
+        clangd = {},
         -- gopls = {},
         -- pyright = {},
         -- rust_analyzer = {},
@@ -446,11 +444,11 @@ require('lazy').setup({
           lua = { 'stylua' },
           python = { 'isort', 'black' },
         },
-        format_on_save = {
-          lsp_fallback = false,
-          async = false,
-          timeout_ms = 1000,
-        },
+        -- format_on_save = {
+        --   lsp_fallback = false,
+        --   async = false,
+        --   timeout_ms = 1000,
+        -- },
         prettier_options = {
           printWidth = 120,
         },
@@ -567,13 +565,28 @@ require('lazy').setup({
   { -- Colorscheme
     'rebelot/kanagawa.nvim',
     priority = 1000, -- Make sure to load this before all the other start plugins.
+
+    opts = {
+      overrides = function(colors)
+        local theme = colors.theme
+        return {
+          TelescopeTitle = { fg = theme.ui.special, bold = true },
+          TelescopePromptNormal = { bg = "None" },
+          TelescopePromptBorder = { fg = theme.syn.string, bg = "None" },
+          TelescopeResultsNormal = { fg = theme.ui.fg_dim, bg = "None" },
+          TelescopeResultsBorder = { fg = theme.syn.string, bg = "None" },
+          TelescopePreviewNormal = { bg = "None" },
+          TelescopePreviewBorder = { bg = "None", fg = theme.syn.string },
+        }
+      end,
+    },
     init = function()
-      vim.cmd.colorscheme 'kanagawa'
+      -- -- Dark mode
+      vim.cmd.colorscheme 'kanagawa-dragon'
       vim.api.nvim_set_hl(0, 'Normal', { bg = 'none' })
       vim.api.nvim_set_hl(0, 'NormalFloat', { bg = 'none' })
-
-      -- highlights configuration
-      vim.cmd.hi 'Comment gui=none'
+      -- -- Light mode
+      -- vim.cmd.colorscheme 'kanagawa-lotus'
     end,
   },
 
@@ -583,7 +596,10 @@ require('lazy').setup({
   { -- Better Undo command navigation
     'mbbill/undotree',
     config = function()
-      vim.keymap.set('n', '<leader>u', vim.cmd.UndotreeToggle)
+      vim.keymap.set('n', '<leader>u', function ()
+        vim.cmd.UndotreeToggle()
+        vim.cmd.wincmd('p')
+      end)
     end,
   },
   { -- Collection of various small independent plugins/modules
@@ -641,19 +657,19 @@ require('lazy').setup({
       local mark = require 'harpoon.mark'
       local ui = require 'harpoon.ui'
 
-      vim.keymap.set('n', '<leader>a', mark.add_file)
-      vim.keymap.set('n', '<leader>s', ui.toggle_quick_menu)
+      vim.keymap.set('n', '<leader>h', mark.add_file)
+      vim.keymap.set('n', '<leader>,', ui.toggle_quick_menu)
 
-      vim.keymap.set('n', '<leader>q', function()
+      vim.keymap.set('n', '<leader>n', function()
         ui.nav_file(1)
       end)
-      vim.keymap.set('n', '<leader>w', function()
+      vim.keymap.set('n', '<leader>e', function()
         ui.nav_file(2)
       end)
-      vim.keymap.set('n', '<leader>e', function()
+      vim.keymap.set('n', '<leader>i', function()
         ui.nav_file(3)
       end)
-      vim.keymap.set('n', '<leader>r', function()
+      vim.keymap.set('n', '<leader>o', function()
         ui.nav_file(4)
       end)
     end,
@@ -675,28 +691,7 @@ require('lazy').setup({
       { '<c-\\>', '<cmd><C-U>TmuxNavigatePrevious<cr>' },
     },
   },
-  -- {
-  --   "zbirenbaum/copilot.lua",
-  --   cmd = "Copilot",
-  --   event = "InsertEnter",
-  --   config = function()
-  --     require("copilot").setup({})
-  --
-  --   end,
-  -- },
-  -- {
-  --   "CopilotC-Nvim/CopilotChat.nvim",
-  --   branch = "canary",
-  --   dependencies = {
-  --     { "zbirenbaum/copilot.lua" }, -- or github/copilot.vim
-  --     { "nvim-lua/plenary.nvim" }, -- for curl, log wrapper
-  --   },
-  --   opts = {
-  --     debug = true, -- Enable debugging
-  --     -- See Configuration section for rest
-  --   },
-  --   -- See Commands section for default commands if you want to lazy load on them
-  -- },
+
   require 'kickstart.plugins.debug',
   -- require 'kickstart.plugins.indent_line',
   require 'kickstart.plugins.lint',
@@ -704,26 +699,26 @@ require('lazy').setup({
   -- require 'kickstart.plugins.neo-tree',
   -- require 'kickstart.plugins.gitsigns', -- adds gitsigns recommend keymaps
 }, {
-  ui = {
-    -- If you are using a Nerd Font: set icons to an empty table which will use the
-    -- default lazy.nvim defined Nerd Font icons, otherwise define a unicode icons table
-    icons = vim.g.have_nerd_font and {} or {
-      cmd = '⌘',
-      config = '🛠',
-      event = '📅',
-      ft = '📂',
-      init = '⚙',
-      keys = '🗝',
-      plugin = '🔌',
-      runtime = '💻',
-      require = '🌙',
-      source = '📄',
-      start = '🚀',
-      task = '📌',
-      lazy = '💤 ',
+    ui = {
+      -- If you are using a Nerd Font: set icons to an empty table which will use the
+      -- default lazy.nvim defined Nerd Font icons, otherwise define a unicode icons table
+      icons = vim.g.have_nerd_font and {} or {
+        cmd = '⌘',
+        config = '🛠',
+        event = '📅',
+        ft = '📂',
+        init = '⚙',
+        keys = '🗝',
+        plugin = '🔌',
+        runtime = '💻',
+        require = '🌙',
+        source = '📄',
+        start = '🚀',
+        task = '📌',
+        lazy = '💤 ',
+      },
     },
-  },
-})
+  })
 
 -- The line beneath this is called `modeline`. See `:help modeline`
 -- vim: ts=2 sts=2 sw=2 et
